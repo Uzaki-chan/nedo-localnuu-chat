@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset "utf-8">
+    <title>недо-чат</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        #message-box {
+            height: 400px;
+            overflow: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        
+        #message-box p {
+            margin: 0;
+            padding: 5px;
+        }
+        
+        #input-box {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Недо-чат</h1>
+    <div id="message-box"></div>
+    <div id="input-box">
+        <input type="text" id="message-input" placeholder="Введите сообщение...">
+        <button type="button" id="submit-button">отправить</button>
+        <button type="button" id="submit-button2">вниз</button>
+    </div>
+    
+    <script>
+        const messageBox = document.getElementById('message-box');
+        const messageInput = document.getElementById('message-input');
+        const submitButton = document.getElementById('submit-button');
+        const submitButton2 = document.getElementById('submit-button2');
+
+        function displayStoredMessages() {
+            fetch('/get-messages')
+                .then(response => response.json())
+                .then(messages => {
+                    messageBox.innerHTML = '';
+
+                    messages.forEach(message => {
+                        const p = document.createElement('p');
+                        p.textContent = message;
+                        messageBox.appendChild(p);
+                    });
+                    
+
+                    
+                })
+                .catch(error => console.error('Ошибка получения сообщения:', error));
+        }
+
+        displayStoredMessages();
+        messageBox.scrollTop = messageBox.scrollHeight;
+        submitButton2.addEventListener('click', function () {
+                messageBox.scrollTop = messageBox.scrollHeight;
+            });
+
+        submitButton.addEventListener('click', function () {
+            const message = messageInput.value;
+            if (message) {
+                const currentTime = new Date().toLocaleTimeString();
+                const messageObj = { time: currentTime, message: message };
+
+                const p = document.createElement('p');
+                p.textContent = `${messageObj.message} - ${messageObj.time}`;
+                messageBox.appendChild(p);
+                displayStoredMessages();
+
+                fetch('/save-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(messageObj),
+                })
+                    .then(response => response.json())
+                    .then(data => console.log('Сообщение сохранено:', data))
+                    .catch(error => console.error('Ошибка сохранения сообщения:', error));
+
+                messageInput.value = '';
+                messageBox.scrollTop = messageBox.scrollHeight;
+            }
+        });
+        setInterval(() => displayStoredMessages(), 2000)
+    </script>
+</body>
+</html>
